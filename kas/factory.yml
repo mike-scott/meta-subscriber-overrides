@@ -1,0 +1,38 @@
+# Your factory's build: take canonical LmP v97 as the base via `includes`, then add only
+# your own partner/override layers here. You never edit lmp-v97.yml — kas merges this file
+# on top of it (later files win), so you inherit every base layer at its pinned v97 commit
+# and just layer your customizations.
+#
+# Point the runner at THIS file:
+#   fioman-runner.yaml:  distro: lmp   kas_file: ./factory.yml
+#
+# `includes` can also pull the base from a repo instead of a local path, e.g.:
+#   header:
+#     includes:
+#       - repo: fioman-bases       # a repo declared under repos: below
+#         file: kas/lmp-v97.yml
+header:
+  version: 14
+  includes:
+    - lmp-v97.yml                  # canonical LmP v97 base (all core + BSP layers, pinned)
+
+repos:
+  # Your factory customization layer — keys, apps, board config, sota/sota.toml settings.
+  #
+  # This file lives in that repo and you set it as the runner's `config_repo`, so the agent
+  # already checks the repo out at the triggering commit. Declare it WITHOUT a url — kas then
+  # uses that existing checkout as the layer (one clone, files + layer at the same commit).
+  # Don't set the fioman-action's `source` to this repo; the config_repo checkout pins it.
+  meta-subscriber-overrides:
+
+  # An optional partner/vendor layer in its OWN repo. Keep its url; if a fioman-action lives
+  # in that repo, set the action's `source: meta-partner-acme` so the runner pins it to the
+  # triggering commit via a kas refspec override.
+  # meta-partner-acme:
+  #   url: https://github.com/your-org/meta-partner-acme.git
+  #   branch: main
+
+# Factory-local conf goes here (does not touch the base). Example:
+# local_conf_header:
+#   factory: |
+#     DISTRO_FEATURES:append = " your-feature"

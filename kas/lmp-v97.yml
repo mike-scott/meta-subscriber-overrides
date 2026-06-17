@@ -1,0 +1,99 @@
+# Canonical LmP (Foundries.io Linux microPlatform) v97 platform build, as a kas file.
+#
+# Translated from the LmP v97 repo-manifest (https://github.com/foundriesio/lmp-manifest/tree/97):
+#   - repo revisions: default.xml → lmp-base.xml + lmp-bsp.xml (each layer pinned to its
+#     exact v97 commit; mirror repos from the `lmp-mirrors` remote, meta-lmp from `fio`).
+#   - enabled layers: conf/bblayers-base.inc + conf/bblayers-bsp.inc (plus the always-on
+#     openembedded-core/meta and meta-lmp/meta-lmp-base).
+# LmP's canonical build is `repo`-based; this is a faithful kas translation so it builds
+# under `fioman runner agent`.
+#
+# DON'T edit this file to customize — INCLUDE it from your own kas file and add your
+# partner/override layers there (see examples/kas/factory.yml). Then point the runner at
+# YOUR file: kas_file: ./factory.yml, distro: lmp.
+#
+# Output: an LmP OSTree commit under build/tmp/deploy/images/<machine>/ostree_repo.
+header:
+  version: 14
+
+distro: lmp
+machine: "${MACHINE}"
+target: lmp-factory-image          # or lmp-base-console-image / lmp-gateway-image
+
+repos:
+  # --- OpenEmbedded core + bitbake (lmp-mirrors) ---
+  openembedded-core:
+    url: https://github.com/lmp-mirrors/openembedded-core.git
+    commit: 52380df998b3a8fe6a091f8547434a3231320a8e
+    layers:
+      meta:
+  bitbake:
+    url: https://github.com/lmp-mirrors/bitbake.git
+    commit: d3b4c352dd33fca90cd31649eda054b884478739
+    layers:
+      .: excluded                  # bitbake ships no layer
+
+  # --- Foundries LmP metadata (fio remote) ---
+  meta-lmp:
+    url: https://github.com/foundriesio/meta-lmp.git
+    commit: d95a52269d8109de07bb1957c47dedcb45888f94
+    layers:
+      meta-lmp-base:
+      meta-lmp-bsp:
+      # meta-lmp-partner:          # enable if your release/board uses it
+
+  # --- Common metadata (lmp-mirrors) ---
+  meta-openembedded:
+    url: https://github.com/lmp-mirrors/meta-openembedded.git
+    commit: 5124ac4a658899158f4a7a2ddf1d2ca931ec7d0e
+    layers:
+      meta-oe:
+      meta-networking:
+      meta-filesystems:
+      meta-perl:
+      meta-python:
+  meta-clang:
+    url: https://github.com/lmp-mirrors/meta-clang.git
+    commit: 731488911f55ebfe746068512b426351192f82f2
+  meta-security:
+    url: https://github.com/lmp-mirrors/meta-security.git
+    commit: bc865c5276c2ab4031229916e8d7c20148dfbac3
+    layers:
+      .:                           # the meta-security layer (repo root)
+      meta-tpm:
+      meta-parsec:
+      meta-integrity:
+  meta-updater:                    # OSTree / OTA (sota) — central to LmP images
+    url: https://github.com/lmp-mirrors/meta-updater.git
+    commit: b275153c9c8ea09e27d41db9f2faba3ebf92d2c2
+  meta-virtualization:
+    url: https://github.com/lmp-mirrors/meta-virtualization.git
+    commit: d75faad37ae3cbbfe31dffaa6432553fc5450838
+
+  # --- BSP layers (lmp-bsp.xml). All are fetched; the active MACHINE selects which
+  #     machine .conf is used. Trim to the BSPs you ship to speed cloning. ---
+  meta-arm:
+    url: https://github.com/lmp-mirrors/meta-arm.git
+    commit: a81c19915b5b9e71ed394032e9a50fd06919e1cd
+    layers:
+      meta-arm:
+      meta-arm-bsp:
+      meta-arm-toolchain:
+  meta-raspberrypi:
+    url: https://github.com/lmp-mirrors/meta-raspberrypi.git
+    commit: 5240b5c200e594b494a7f1a8f9d81e7c09bc8939
+  meta-intel:
+    url: https://github.com/lmp-mirrors/meta-intel.git
+    commit: 6fc37057c7f0293a2345e303588901889df8b937
+  meta-yocto:
+    url: https://github.com/lmp-mirrors/meta-yocto.git
+    commit: 9bb6e6e8b016a0c9dfe290369a6ed91ef4020535
+    layers:
+      meta-yocto-bsp:
+
+# Network cache — keeps workers stateless yet warm (the agent points these at its cache).
+local_conf_header:
+  cache: |
+    SSTATE_DIR ?= "${SSTATE_DIR}"
+    DL_DIR ?= "${DL_DIR}"
+    SSTATE_MIRRORS ?= "file://.* file://${SSTATE_DIR}/PATH"
