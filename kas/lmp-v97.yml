@@ -16,9 +16,9 @@
 header:
   version: 14
 
-distro: lmp
-machine: "${MACHINE}"
-target: lmp-factory-image          # or lmp-base-console-image / lmp-gateway-image
+distro: lmp                        # KAS_DISTRO overrides
+machine: intel-corei7-64           # a default; the runner sets KAS_MACHINE per build to override
+target: lmp-factory-image          # or lmp-base-console-image / lmp-gateway-image (KAS_TARGET overrides)
 
 repos:
   # --- OpenEmbedded core + bitbake (lmp-mirrors) ---

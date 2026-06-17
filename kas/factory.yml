@@ -24,6 +24,8 @@ repos:
   # uses that existing checkout as the layer (one clone, files + layer at the same commit).
   # Don't set the fioman-action's `source` to this repo; the config_repo checkout pins it.
   meta-subscriber-overrides:
+  # (If instead meta-subscriber-overrides is a SEPARATE repo from the one holding this file,
+  #  give it a url + branch like the partner layer below.)
 
   # An optional partner/vendor layer in its OWN repo. Keep its url; if a fioman-action lives
   # in that repo, set the action's `source: meta-partner-acme` so the runner pins it to the
