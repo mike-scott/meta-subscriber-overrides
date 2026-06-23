@@ -1,0 +1,19 @@
+name: fioman platform build
+on:
+  push:
+    branches: [main]
+jobs:
+  trigger:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Trigger fioman Run
+        env:
+          FIOMAN_SERVER: https://dev.scottml.com
+          FIOMAN_TOKEN: ${{ secrets.FIOMAN_TRIGGER_TOKEN }}
+        run: |
+          set -euo pipefail
+          slug="${GITHUB_REPOSITORY##*/}@${GITHUB_SHA::7}"
+          curl -fsS -X POST "$FIOMAN_SERVER/v1/runs" \
+            -H "Authorization: Bearer $FIOMAN_TOKEN" \
+            -H 'content-type: application/json' \
+            -d "{\"stream\":\"main\",\"kind\":\"platform\",\"source\":\"meta-subscriber-overrides\",\"slug\":\"$slug\",\"commit_sha\":\"$GITHUB_SHA\"}"
