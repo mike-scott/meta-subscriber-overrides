@@ -7,26 +7,27 @@
 name: platform-build
 on:
   push:
-    branches: [main]
+    branches: [main, stable]   # each branch maps to the stream(s) that build this repo at that ref
 jobs:
   trigger:
     runs-on: ubuntu-24.04
     env:
       FIOMAN_SERVER: https://dev.scottml.com
-      # Trigger token minted with `fioman trigger register <name> --streams main`, stored as
-      # the FIOMAN_TRIGGER_TOKEN repo secret. fioman authenticates the trigger with it.
+      # Trigger token (FIOMAN_TRIGGER_TOKEN repo secret) scoped to the streams these branches map to,
+      # e.g. `fioman trigger register <name> --streams main,stable`. fioman authenticates with it.
       FIOMAN_TOKEN: ${{ secrets.FIOMAN_TRIGGER_TOKEN }}
     steps:
       - name: Trigger + follow fioman Run
         run: |
           set -euo pipefail
           slug="${GITHUB_REPOSITORY##*/}@${GITHUB_SHA::7}"
-          # `source` must match this layer's key in your kas file's `repos:` block
-          # (e.g. examples/kas/factory.yml).
+          # No stream named here: serve resolves it from `repo` + `ref` against streams.yaml (the
+          # stream(s) whose platform builds this repo at this branch). `source` must match this
+          # layer's key in your kas file's `repos:`. To force one stream, add "stream":"<name>".
           resp=$(curl -fsS -X POST "$FIOMAN_SERVER/v1/runs" \
             -H "Authorization: Bearer $FIOMAN_TOKEN" \
             -H 'content-type: application/json' \
-            -d "{\"stream\":\"main\",\"kind\":\"platform\",\"source\":\"meta-subscriber-overrides\",\"slug\":\"$slug\",\"commit_sha\":\"$GITHUB_SHA\"}")
+            -d "{\"kind\":\"platform\",\"source\":\"meta-subscriber-overrides\",\"slug\":\"$slug\",\"commit_sha\":\"$GITHUB_SHA\",\"ref\":\"$GITHUB_REF_NAME\",\"repo\":\"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY\"}")
           run_id=$(printf '%s' "$resp" | grep -o '"run_id":"[^"]*"' | head -1 | cut -d'"' -f4)
           [ -n "$run_id" ] || { echo "no run_id in response: $resp"; exit 1; }
           echo "queued Run $run_id — following to completion…"
